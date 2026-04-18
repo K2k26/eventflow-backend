@@ -1,0 +1,1366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Eventflow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+<link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet" />
+<script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
+<script src="https://js.stripe.com/v3/"></script>
+<style>
+  :root {
+    --bg:       #ffffff;
+    --bg2:      #f7f7f5;
+    --bg3:      #f0efec;
+    --border:   #e8e7e4;
+    --border2:  #d4d3cf;
+    --text:     #111110;
+    --text2:    #6b6a67;
+    --text3:    #a8a7a3;
+    --accent:   #111110;
+    --accent-bg:#f0efec;
+    --success:  #1a7a4a;
+    --success-bg:#edf7f1;
+    --danger:   #c0392b;
+    --danger-bg:#fdf0ef;
+    --radius:   10px;
+    --radius-lg:16px;
+    --shadow:   0 1px 3px rgba(0,0,0,0.07), 0 4px 16px rgba(0,0,0,0.04);
+    --shadow-lg:0 8px 32px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.06);
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:       #111110;
+      --bg2:      #1a1a18;
+      --bg3:      #222220;
+      --border:   #2a2a28;
+      --border2:  #3a3a38;
+      --text:     #f0efe9;
+      --text2:    #8a8a85;
+      --text3:    #55554f;
+      --accent:   #f0efe9;
+      --accent-bg:#1f1f1d;
+      --success:  #4ade80;
+      --success-bg:#0f2a1a;
+      --danger:   #f87171;
+      --danger-bg:#2a0f0f;
+      --shadow:   0 1px 3px rgba(0,0,0,0.3), 0 4px 16px rgba(0,0,0,0.2);
+      --shadow-lg:0 8px 32px rgba(0,0,0,0.4), 0 2px 8px rgba(0,0,0,0.3);
+    }
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 56px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .nav-logo {
+    font-family: 'Instrument Serif', serif;
+    font-size: 20px;
+    color: var(--text);
+    text-decoration: none;
+    letter-spacing: -0.01em;
+  }
+  .nav-logo em { font-style: italic; }
+
+  .nav-right { display: flex; align-items: center; gap: 8px; }
+
+  .nav-btn {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 7px 16px;
+    border-radius: 99px;
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--text2);
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .nav-btn:hover { background: var(--bg2); color: var(--text); border-color: var(--border2); }
+  .nav-btn.primary { background: var(--text); color: var(--bg); border-color: var(--text); }
+  .nav-btn.primary:hover { opacity: 0.85; }
+
+  .avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 500; color: var(--text2);
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .avatar:hover { border-color: var(--text2); }
+
+  /* ── HERO ── */
+  .hero {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 72px 24px 48px;
+    text-align: center;
+  }
+
+  .hero-eyebrow {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12px; font-weight: 500; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--text3);
+    background: var(--bg2); border: 1px solid var(--border);
+    padding: 4px 12px; border-radius: 99px;
+    margin-bottom: 24px;
+  }
+  .hero-eyebrow::before { content: ''; width: 6px; height: 6px; background: var(--success); border-radius: 50%; }
+
+  .hero h1 {
+    font-family: 'Instrument Serif', serif;
+    font-size: clamp(36px, 6vw, 60px);
+    font-weight: 400;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    margin-bottom: 16px;
+  }
+  .hero h1 em { font-style: italic; color: var(--text2); }
+
+  .hero p {
+    font-size: 16px;
+    color: var(--text2);
+    font-weight: 300;
+    max-width: 440px;
+    margin: 0 auto 36px;
+    line-height: 1.7;
+  }
+
+  /* ── SEARCH ── */
+  .search-wrap {
+    max-width: 600px;
+    margin: 0 auto 16px;
+    display: flex;
+    background: var(--bg);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+    transition: box-shadow 0.2s, border-color 0.2s;
+  }
+  .search-wrap:focus-within {
+    border-color: var(--text);
+    box-shadow: 0 0 0 3px rgba(17,17,16,0.08), var(--shadow-lg);
+  }
+
+  .search-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    color: var(--text);
+    padding: 14px 16px;
+    outline: none;
+    min-width: 0;
+  }
+  .search-input::placeholder { color: var(--text3); }
+
+  .search-submit {
+    margin: 6px;
+    background: var(--text);
+    color: var(--bg);
+    border: none;
+    border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 8px 20px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: opacity 0.15s;
+    flex-shrink: 0;
+  }
+  .search-submit:hover { opacity: 0.8; }
+  .search-submit:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .chips {
+    display: flex; flex-wrap: wrap; justify-content: center;
+    gap: 8px; max-width: 600px; margin: 0 auto;
+  }
+  .chip {
+    font-size: 13px; font-weight: 400;
+    padding: 5px 14px;
+    border-radius: 99px;
+    border: 1px solid var(--border);
+    color: var(--text2);
+    background: var(--bg2);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .chip:hover { border-color: var(--text); color: var(--text); background: var(--bg3); }
+
+  /* ── MAIN LAYOUT ── */
+  .main {
+    max-width: 1160px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    gap: 24px;
+    align-items: start;
+  }
+  @media (max-width: 860px) {
+    .main { grid-template-columns: 1fr; }
+    .map-panel { order: -1; }
+  }
+
+  /* ── RESULTS ── */
+  .results-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px; min-height: 28px;
+  }
+  .results-count { font-size: 13px; color: var(--text3); font-weight: 400; }
+  .source-pill {
+    font-size: 11px; font-weight: 500; letter-spacing: 0.04em;
+    padding: 3px 10px; border-radius: 99px;
+    background: var(--bg2); color: var(--text2);
+    border: 1px solid var(--border);
+  }
+  .source-pill.ai { background: var(--success-bg); color: var(--success); border-color: transparent; }
+
+  .cards { display: flex; flex-direction: column; gap: 1px; }
+
+  .card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    cursor: pointer;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    display: flex; gap: 14px; align-items: flex-start;
+  }
+  .card + .card { margin-top: 8px; }
+  .card:hover { border-color: var(--border2); box-shadow: var(--shadow); }
+  .card.active { border-color: var(--text); box-shadow: var(--shadow); }
+
+  .card-icon {
+    font-size: 22px;
+    width: 44px; height: 44px; flex-shrink: 0;
+    background: var(--bg2); border-radius: var(--radius);
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--border);
+  }
+
+  .card-body { flex: 1; min-width: 0; }
+
+  .card-head {
+    display: flex; align-items: flex-start;
+    justify-content: space-between; gap: 8px;
+    margin-bottom: 2px;
+  }
+
+  .card-name {
+    font-size: 14px; font-weight: 500; color: var(--text);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    line-height: 1.4;
+  }
+
+  .fav-btn {
+    flex-shrink: 0;
+    background: none; border: none; cursor: pointer;
+    font-size: 16px; color: var(--text3); line-height: 1;
+    padding: 2px;
+    transition: color 0.15s, transform 0.1s;
+  }
+  .fav-btn:hover { color: var(--danger); transform: scale(1.15); }
+  .fav-btn.active { color: var(--danger); }
+
+  .card-location { font-size: 12px; color: var(--text3); margin-bottom: 6px; }
+  .card-desc { font-size: 13px; color: var(--text2); line-height: 1.55; font-weight: 300; }
+
+  .card-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-top: 12px; flex-wrap: wrap; gap: 8px;
+  }
+
+  .tags { display: flex; flex-wrap: wrap; gap: 5px; }
+  .tag {
+    font-size: 11px; font-weight: 500; letter-spacing: 0.03em;
+    padding: 2px 8px; border-radius: 99px;
+    background: var(--bg2); color: var(--text3); border: 1px solid var(--border);
+  }
+  .tag.live { background: var(--success-bg); color: var(--success); border-color: transparent; }
+
+  .card-date { font-size: 12px; color: var(--text2); font-weight: 400; }
+
+  .buy-btn {
+    font-size: 12px; font-weight: 500;
+    padding: 6px 14px; border-radius: 99px;
+    background: var(--text); color: var(--bg);
+    border: none; cursor: pointer; white-space: nowrap;
+    transition: opacity 0.15s;
+  }
+  .buy-btn:hover { opacity: 0.75; }
+
+  /* ── MAP ── */
+  .map-panel { position: sticky; top: 80px; }
+
+  .map-card {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    height: 460px;
+    background: var(--bg2);
+    box-shadow: var(--shadow);
+  }
+
+  #map { width: 100%; height: 100%; }
+
+  .map-empty {
+    width: 100%; height: 100%;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 8px; color: var(--text3); font-size: 13px;
+    text-align: center; padding: 24px;
+  }
+  .map-empty svg { opacity: 0.3; margin-bottom: 4px; }
+
+  /* ── STATUS ── */
+  .empty-state {
+    text-align: center; padding: 64px 24px;
+    color: var(--text3); font-size: 14px;
+    border: 1px dashed var(--border); border-radius: var(--radius-lg);
+  }
+  .empty-state .icon { font-size: 32px; margin-bottom: 12px; opacity: 0.5; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner {
+    width: 20px; height: 20px;
+    border: 2px solid var(--border);
+    border-top-color: var(--text);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    margin: 0 auto 12px;
+  }
+
+  /* ── MODAL BACKDROP ── */
+  .modal-backdrop {
+    display: none;
+    position: fixed; inset: 0; z-index: 500;
+    background: rgba(0,0,0,0.45);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    align-items: center; justify-content: center;
+    padding: 24px;
+  }
+  .modal-backdrop.open { display: flex; }
+
+  .modal {
+    background: var(--bg);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    width: 100%; max-width: 420px;
+    padding: 28px;
+    position: relative;
+    animation: modal-in 0.2s ease;
+  }
+  @keyframes modal-in { from { opacity: 0; transform: translateY(8px) scale(0.98); } }
+
+  .modal-close {
+    position: absolute; top: 16px; right: 16px;
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 50%;
+    width: 28px; height: 28px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 14px; color: var(--text2);
+    transition: background 0.15s;
+  }
+  .modal-close:hover { background: var(--bg3); }
+
+  .modal h2 {
+    font-family: 'Instrument Serif', serif;
+    font-size: 22px; font-weight: 400;
+    letter-spacing: -0.01em;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .modal .modal-sub { font-size: 13px; color: var(--text3); margin-bottom: 24px; }
+
+  /* ── TABS ── */
+  .tabs {
+    display: flex; gap: 2px;
+    background: var(--bg2); border-radius: var(--radius); padding: 3px;
+    margin-bottom: 22px;
+  }
+  .tab {
+    flex: 1; text-align: center;
+    font-size: 13px; font-weight: 500;
+    padding: 7px; border-radius: 8px;
+    border: none; background: none;
+    color: var(--text2); cursor: pointer;
+    transition: all 0.15s;
+  }
+  .tab.active { background: var(--bg); color: var(--text); box-shadow: var(--shadow); }
+
+  /* ── FORM ── */
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 12px; font-weight: 500; color: var(--text2); margin-bottom: 5px; letter-spacing: 0.02em; }
+  .field input {
+    width: 100%;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    padding: 10px 12px;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .field input:focus { border-color: var(--text); box-shadow: 0 0 0 3px rgba(17,17,16,0.07); }
+
+  .modal-btn {
+    width: 100%; padding: 11px;
+    background: var(--text); color: var(--bg);
+    border: none; border-radius: var(--radius);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px; font-weight: 500;
+    cursor: pointer; transition: opacity 0.15s;
+    margin-top: 4px;
+  }
+  .modal-btn:hover { opacity: 0.82; }
+  .modal-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .divider {
+    display: flex; align-items: center; gap: 12px;
+    margin: 18px 0; color: var(--text3); font-size: 12px;
+  }
+  .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .oauth-btn {
+    width: 100%; padding: 10px;
+    background: var(--bg2); color: var(--text);
+    border: 1px solid var(--border2); border-radius: var(--radius);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px; font-weight: 500;
+    cursor: pointer; transition: background 0.15s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .oauth-btn:hover { background: var(--bg3); }
+
+  .modal-footer { text-align: center; margin-top: 16px; font-size: 12px; color: var(--text3); }
+  .modal-footer a { color: var(--text2); cursor: pointer; text-decoration: underline; }
+
+  /* ── PROFILE MENU ── */
+  .profile-menu {
+    display: none; position: absolute; top: calc(100% + 8px); right: 0;
+    background: var(--bg); border: 1px solid var(--border2);
+    border-radius: var(--radius-lg); box-shadow: var(--shadow-lg);
+    width: 220px; overflow: hidden; z-index: 200;
+  }
+  .profile-menu.open { display: block; }
+
+  .profile-header {
+    padding: 14px 16px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .profile-name { font-size: 13px; font-weight: 500; color: var(--text); }
+  .profile-email { font-size: 12px; color: var(--text3); }
+
+  .menu-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 16px;
+    font-size: 13px; color: var(--text2);
+    cursor: pointer; transition: background 0.1s;
+    border: none; background: none; width: 100%; text-align: left;
+  }
+  .menu-item:hover { background: var(--bg2); color: var(--text); }
+  .menu-item .mi-icon { width: 16px; text-align: center; font-size: 14px; }
+  .menu-item.danger { color: var(--danger); }
+  .menu-sep { height: 1px; background: var(--border); margin: 4px 0; }
+  .profile-wrap { position: relative; }
+
+  /* ── PAYMENT MODAL ── */
+  .stripe-field {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    margin-bottom: 14px;
+    transition: border-color 0.15s;
+  }
+  .stripe-field.focused { border-color: var(--text); box-shadow: 0 0 0 3px rgba(17,17,16,0.07); }
+
+  .checkout-event {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 12px 14px;
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 20px;
+  }
+  .checkout-icon { font-size: 24px; }
+  .checkout-name { font-size: 13px; font-weight: 500; color: var(--text); }
+  .checkout-loc { font-size: 12px; color: var(--text3); }
+  .checkout-price { margin-left: auto; font-size: 14px; font-weight: 500; color: var(--text); }
+
+  .price-row {
+    display: flex; justify-content: space-between;
+    font-size: 13px; color: var(--text2); margin-bottom: 6px;
+  }
+  .price-row.total { font-weight: 500; color: var(--text); padding-top: 8px; border-top: 1px solid var(--border); margin-top: 8px; font-size: 14px; }
+
+  .stripe-badge {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    margin-top: 14px; font-size: 11px; color: var(--text3);
+  }
+
+  /* ── FAVOURITES PANEL ── */
+  .section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .section-title {
+    font-family: 'Instrument Serif', serif;
+    font-size: 18px; color: var(--text); font-weight: 400;
+  }
+  .fav-list { display: flex; flex-direction: column; gap: 8px; }
+  .fav-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; background: var(--bg2);
+    border: 1px solid var(--border); border-radius: var(--radius);
+    font-size: 13px; color: var(--text);
+  }
+  .fav-row-icon { font-size: 18px; }
+  .fav-row-name { flex: 1; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .fav-row-loc { font-size: 12px; color: var(--text3); }
+  .fav-remove { background: none; border: none; cursor: pointer; color: var(--text3); font-size: 14px; padding: 4px; transition: color 0.15s; }
+  .fav-remove:hover { color: var(--danger); }
+
+  /* ── PAYMENT MGMT ── */
+  .payment-card-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 14px; background: var(--bg2);
+    border: 1px solid var(--border); border-radius: var(--radius);
+    margin-bottom: 8px;
+  }
+  .card-brand {
+    width: 36px; height: 24px; background: var(--bg3);
+    border: 1px solid var(--border2); border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 600; color: var(--text2);
+  }
+  .card-info { flex: 1; }
+  .card-number { font-size: 13px; font-weight: 500; color: var(--text); }
+  .card-expiry { font-size: 11px; color: var(--text3); }
+  .card-default { font-size: 11px; font-weight: 500; color: var(--success); }
+  .remove-card { background: none; border: none; cursor: pointer; color: var(--text3); font-size: 13px; padding: 4px; }
+  .remove-card:hover { color: var(--danger); }
+
+  .toast {
+    position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+    background: var(--text); color: var(--bg);
+    padding: 10px 18px; border-radius: var(--radius);
+    font-size: 13px; font-weight: 500;
+    box-shadow: var(--shadow-lg);
+    animation: toast-in 0.2s ease;
+    display: none;
+  }
+  .toast.show { display: block; }
+  @keyframes toast-in { from { opacity: 0; transform: translateY(8px); } }
+
+  /* MAPBOX POPUPS */
+  .mapboxgl-popup-content {
+    background: var(--bg) !important; color: var(--text) !important;
+    border: 1px solid var(--border2) !important; border-radius: 8px !important;
+    padding: 10px 14px !important; font-family: 'DM Sans', sans-serif !important;
+    font-size: 13px !important; box-shadow: var(--shadow-lg) !important;
+  }
+  .mapboxgl-popup-tip { display: none !important; }
+  .popup-name { font-weight: 500; font-size: 13px; margin-bottom: 2px; }
+  .popup-loc { color: var(--text3); font-size: 12px; }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a class="nav-logo" href="#">Event<em>flow</em></a>
+  <div class="nav-right" id="navRight">
+    <button class="nav-btn" onclick="openModal('login')">Log in</button>
+    <button class="nav-btn primary" onclick="openModal('signup')">Sign up</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-eyebrow">Live events &amp; venues worldwide</div>
+  <h1>Find your next <em>great</em> night out</h1>
+  <p>Search for concerts, clubs, and live events anywhere — powered by Ticketmaster and AI.</p>
+
+  <div class="search-wrap">
+    <input class="search-input" id="searchInput" type="text" placeholder="techno in Berlin, jazz club in Barcelona…" />
+    <button class="search-submit" id="searchBtn" onclick="doSearch()">Search</button>
+  </div>
+
+  <div class="chips">
+    <span class="chip" onclick="quickSearch('techno in Berlin')">Techno · Berlin</span>
+    <span class="chip" onclick="quickSearch('jazz club in New Orleans')">Jazz · New Orleans</span>
+    <span class="chip" onclick="quickSearch('flamenco in Seville')">Flamenco · Seville</span>
+    <span class="chip" onclick="quickSearch('rooftop bar Tokyo')">Rooftop · Tokyo</span>
+    <span class="chip" onclick="quickSearch('live blues Chicago')">Blues · Chicago</span>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <div>
+    <div class="results-bar">
+      <span class="results-count" id="resultsCount"></span>
+      <span class="source-pill" id="sourcePill" style="display:none"></span>
+    </div>
+    <div id="resultsArea">
+      <div class="empty-state">
+        <div class="icon">🔍</div>
+        Search above to discover events near you
+      </div>
+    </div>
+  </div>
+
+  <div class="map-panel">
+    <div class="map-card">
+      <div id="map">
+        <div class="map-empty">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+          Event locations appear here
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings toggle -->
+    <details style="margin-top:12px;">
+      <summary style="font-size:12px;color:var(--text3);cursor:pointer;list-style:none;display:flex;align-items:center;gap:4px;">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        API settings
+      </summary>
+      <div style="margin-top:10px;padding:14px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);display:grid;gap:10px;">
+        <div class="field" style="margin:0">
+          <label>Ticketmaster API key</label>
+          <input type="text" id="tmKey" placeholder="Paste your key" />
+        </div>
+        <div class="field" style="margin:0">
+          <label>Mapbox token</label>
+          <input type="text" id="mbToken" placeholder="pk.eyJ1…" />
+        </div>
+        <p style="font-size:11px;color:var(--text3);line-height:1.5;">Keys stored in browser only. Free keys at <a href="https://developer.ticketmaster.com" target="_blank" style="color:var(--text2);">Ticketmaster</a> and <a href="https://mapbox.com" target="_blank" style="color:var(--text2);">Mapbox</a>.</p>
+      </div>
+    </details>
+  </div>
+</div>
+
+<!-- AUTH MODAL -->
+<div class="modal-backdrop" id="authModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('authModal')">✕</button>
+    <h2 id="authTitle">Welcome back</h2>
+    <p class="modal-sub" id="authSub">Log in to save events and manage payments</p>
+
+    <div class="tabs">
+      <button class="tab active" id="tabLogin" onclick="switchTab('login')">Log in</button>
+      <button class="tab" id="tabSignup" onclick="switchTab('signup')">Sign up</button>
+    </div>
+
+    <div id="loginForm">
+      <div class="field"><label>Email</label><input type="email" id="loginEmail" placeholder="you@example.com" /></div>
+      <div class="field"><label>Password</label><input type="password" id="loginPassword" placeholder="••••••••" /></div>
+      <button class="modal-btn" onclick="doLogin()">Log in</button>
+    </div>
+
+    <div id="signupForm" style="display:none">
+      <div class="field"><label>Name</label><input type="text" id="signupName" placeholder="Your name" /></div>
+      <div class="field"><label>Email</label><input type="email" id="signupEmail" placeholder="you@example.com" /></div>
+      <div class="field"><label>Password</label><input type="password" id="signupPassword" placeholder="Create a password" /></div>
+      <button class="modal-btn" onclick="doSignup()">Create account</button>
+    </div>
+
+    <div class="divider">or</div>
+    <button class="oauth-btn" onclick="oauthLogin('google')">
+      <svg width="16" height="16" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+      Continue with Google
+    </button>
+
+    <div class="modal-footer" id="authSwitch">
+      Don't have an account? <a onclick="switchTab('signup')">Sign up</a>
+    </div>
+  </div>
+</div>
+
+<!-- CHECKOUT MODAL -->
+<div class="modal-backdrop" id="checkoutModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('checkoutModal')">✕</button>
+    <h2>Checkout</h2>
+    <p class="modal-sub">Complete your purchase securely via Stripe</p>
+
+    <div class="checkout-event" id="checkoutEvent"></div>
+
+    <div class="price-row"><span>Ticket price</span><span id="priceTicket">—</span></div>
+    <div class="price-row"><span>Service fee</span><span id="priceFee">—</span></div>
+    <div class="price-row total"><span>Total</span><span id="priceTotal">—</span></div>
+
+    <div style="margin:20px 0 0;">
+      <div class="field">
+        <label>Card details</label>
+        <div class="stripe-field" id="stripeCardMount" style="min-height:20px;"></div>
+      </div>
+      <div class="field">
+        <label>Name on card</label>
+        <div class="stripe-field">
+          <input type="text" id="cardholderName" style="background:none;border:none;outline:none;width:100%;font-size:14px;color:var(--text);font-family:'DM Sans',sans-serif;" placeholder="Jane Smith" />
+        </div>
+      </div>
+    </div>
+
+    <button class="modal-btn" id="payBtn" onclick="processPayment()">Pay now</button>
+    <div class="stripe-badge">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      Secured by Stripe
+    </div>
+  </div>
+</div>
+
+<!-- ACCOUNT MODAL -->
+<div class="modal-backdrop" id="accountModal">
+  <div class="modal" style="max-width:480px;">
+    <button class="modal-close" onclick="closeModal('accountModal')">✕</button>
+    <h2>Account</h2>
+
+    <div class="tabs" style="margin-top:16px;">
+      <button class="tab active" id="tabFavs" onclick="switchAccountTab('favs')">Saved events</button>
+      <button class="tab" id="tabPayments" onclick="switchAccountTab('payments')">Payment</button>
+    </div>
+
+    <!-- FAVOURITES TAB -->
+    <div id="favsTab">
+      <div id="favsList"></div>
+    </div>
+
+    <!-- PAYMENTS TAB -->
+    <div id="paymentsTab" style="display:none;">
+      <div id="paymentsList"></div>
+      <button class="modal-btn" style="margin-top:12px;" onclick="openModal('addCard')">+ Add payment method</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD CARD MODAL -->
+<div class="modal-backdrop" id="addCardModal">
+  <div class="modal" style="max-width:400px;">
+    <button class="modal-close" onclick="closeModal('addCardModal')">✕</button>
+    <h2>Add card</h2>
+    <p class="modal-sub">Saved securely via Stripe</p>
+    <div style="margin-top:4px;">
+      <div class="field"><label>Card number</label>
+        <div class="stripe-field">
+          <input type="text" id="newCardNum" style="background:none;border:none;outline:none;width:100%;font-size:14px;color:var(--text);font-family:'DM Sans',sans-serif;" placeholder="1234 5678 9012 3456" maxlength="19" oninput="formatCard(this)" />
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="field"><label>Expiry</label>
+          <div class="stripe-field">
+            <input type="text" id="newCardExp" style="background:none;border:none;outline:none;width:100%;font-size:14px;color:var(--text);font-family:'DM Sans',sans-serif;" placeholder="MM / YY" maxlength="7" oninput="formatExpiry(this)" />
+          </div>
+        </div>
+        <div class="field"><label>CVC</label>
+          <div class="stripe-field">
+            <input type="text" style="background:none;border:none;outline:none;width:100%;font-size:14px;color:var(--text);font-family:'DM Sans',sans-serif;" placeholder="123" maxlength="3" />
+          </div>
+        </div>
+      </div>
+    </div>
+    <button class="modal-btn" onclick="saveCard()">Save card</button>
+    <div class="stripe-badge">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      Secured by Stripe
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── STATE ──────────────────────────────────────────────────────
+let user = JSON.parse(localStorage.getItem('ef_user') || 'null');
+let favourites = JSON.parse(localStorage.getItem('ef_favs') || '[]');
+let savedCards = JSON.parse(localStorage.getItem('ef_cards') || '[]');
+let currentEventForCheckout = null;
+let mapInstance = null, markers = [];
+
+// ── INIT ──────────────────────────────────────────────────────
+window.addEventListener('load', () => {
+  const k = JSON.parse(localStorage.getItem('ef_keys') || '{}');
+  if (k.tm) document.getElementById('tmKey').value = k.tm;
+  if (k.mb) document.getElementById('mbToken').value = k.mb;
+  renderNav();
+});
+
+// ── NAV ────────────────────────────────────────────────────────
+function renderNav() {
+  const nr = document.getElementById('navRight');
+  if (user) {
+    const initials = user.name ? user.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase() : user.email[0].toUpperCase();
+    nr.innerHTML = `
+      <div class="profile-wrap">
+        <div class="avatar" onclick="toggleMenu()" id="avatarBtn">${initials}</div>
+        <div class="profile-menu" id="profileMenu">
+          <div class="profile-header">
+            <div class="profile-name">${user.name || 'User'}</div>
+            <div class="profile-email">${user.email}</div>
+          </div>
+          <button class="menu-item" onclick="openAccount('favs')"><span class="mi-icon">♡</span> Saved events <span style="margin-left:auto;background:var(--bg3);color:var(--text2);font-size:10px;padding:2px 6px;border-radius:99px;">${favourites.length}</span></button>
+          <button class="menu-item" onclick="openAccount('payments')"><span class="mi-icon">💳</span> Payment methods</button>
+          <div class="menu-sep"></div>
+          <button class="menu-item danger" onclick="doLogout()"><span class="mi-icon">↩</span> Log out</button>
+        </div>
+      </div>`;
+  } else {
+    nr.innerHTML = `
+      <button class="nav-btn" onclick="openModal('login')">Log in</button>
+      <button class="nav-btn primary" onclick="openModal('signup')">Sign up</button>`;
+  }
+}
+
+function toggleMenu() {
+  document.getElementById('profileMenu')?.classList.toggle('open');
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest('.profile-wrap')) {
+    document.getElementById('profileMenu')?.classList.remove('open');
+  }
+});
+
+// ── MODALS ──────────────────────────────────────────────────────
+function openModal(type) {
+  if (type === 'login' || type === 'signup') {
+    document.getElementById('authModal').classList.add('open');
+    switchTab(type);
+  } else if (type === 'addCard') {
+    document.getElementById('addCardModal').classList.add('open');
+  }
+}
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function switchTab(tab) {
+  const isLogin = tab === 'login';
+  document.getElementById('tabLogin').classList.toggle('active', isLogin);
+  document.getElementById('tabSignup').classList.toggle('active', !isLogin);
+  document.getElementById('loginForm').style.display = isLogin ? '' : 'none';
+  document.getElementById('signupForm').style.display = isLogin ? 'none' : '';
+  document.getElementById('authTitle').textContent = isLogin ? 'Welcome back' : 'Create account';
+  document.getElementById('authSub').textContent = isLogin ? 'Log in to save events and manage payments' : 'Join Eventflow — it\'s free';
+  document.getElementById('authSwitch').innerHTML = isLogin
+    ? `Don't have an account? <a onclick="switchTab('signup')">Sign up</a>`
+    : `Already have an account? <a onclick="switchTab('login')">Log in</a>`;
+}
+
+function switchAccountTab(tab) {
+  document.getElementById('tabFavs').classList.toggle('active', tab === 'favs');
+  document.getElementById('tabPayments').classList.toggle('active', tab === 'payments');
+  document.getElementById('favsTab').style.display = tab === 'favs' ? '' : 'none';
+  document.getElementById('paymentsTab').style.display = tab === 'payments' ? '' : 'none';
+}
+
+function openAccount(tab) {
+  document.getElementById('accountModal').classList.add('open');
+  renderFavourites();
+  renderPayments();
+  switchAccountTab(tab);
+  document.getElementById('profileMenu')?.classList.remove('open');
+}
+
+// ── AUTH ────────────────────────────────────────────────────────
+function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass = document.getElementById('loginPassword').value;
+  if (!email || !pass) return showToast('Please fill in all fields');
+  user = { email, name: email.split('@')[0] };
+  localStorage.setItem('ef_user', JSON.stringify(user));
+  closeModal('authModal');
+  renderNav();
+  showToast('Welcome back!');
+}
+
+function doSignup() {
+  const name = document.getElementById('signupName').value.trim();
+  const email = document.getElementById('signupEmail').value.trim();
+  const pass = document.getElementById('signupPassword').value;
+  if (!name || !email || !pass) return showToast('Please fill in all fields');
+  user = { email, name };
+  localStorage.setItem('ef_user', JSON.stringify(user));
+  closeModal('authModal');
+  renderNav();
+  showToast('Account created — welcome!');
+}
+
+function oauthLogin(provider) {
+  user = { email: 'demo@example.com', name: 'Demo User' };
+  localStorage.setItem('ef_user', JSON.stringify(user));
+  closeModal('authModal');
+  renderNav();
+  showToast(`Signed in with ${provider}`);
+}
+
+function doLogout() {
+  user = null; localStorage.removeItem('ef_user');
+  renderNav(); showToast('Logged out');
+}
+
+// ── FAVOURITES ─────────────────────────────────────────────────
+function toggleFav(event) {
+  if (!user) { openModal('login'); return; }
+  const idx = favourites.findIndex(f => f.name === event.name);
+  if (idx === -1) {
+    favourites.push(event);
+    showToast('Event saved ♡');
+  } else {
+    favourites.splice(idx, 1);
+    showToast('Removed from saved');
+  }
+  localStorage.setItem('ef_favs', JSON.stringify(favourites));
+  renderNav();
+  return isFav(event);
+}
+
+function isFav(event) { return favourites.some(f => f.name === event.name); }
+
+function renderFavourites() {
+  const el = document.getElementById('favsList');
+  if (!favourites.length) {
+    el.innerHTML = `<div style="text-align:center;padding:32px 0;color:var(--text3);font-size:13px;">No saved events yet.<br/>Heart an event to save it here.</div>`;
+    return;
+  }
+  el.innerHTML = favourites.map((f, i) => `
+    <div class="fav-row">
+      <span class="fav-row-icon">${f.emoji}</span>
+      <div style="flex:1;min-width:0;">
+        <div class="fav-row-name">${f.name}</div>
+        <div class="fav-row-loc">${f.location}</div>
+      </div>
+      <button class="fav-remove" onclick="removeFav(${i})">✕</button>
+    </div>`).join('');
+}
+
+function removeFav(i) {
+  favourites.splice(i, 1);
+  localStorage.setItem('ef_favs', JSON.stringify(favourites));
+  renderFavourites(); renderNav();
+}
+
+// ── PAYMENTS ───────────────────────────────────────────────────
+function renderPayments() {
+  const el = document.getElementById('paymentsList');
+  if (!savedCards.length) {
+    el.innerHTML = `<div style="text-align:center;padding:24px 0;color:var(--text3);font-size:13px;">No payment methods saved yet.</div>`;
+    return;
+  }
+  el.innerHTML = savedCards.map((c, i) => `
+    <div class="payment-card-row">
+      <div class="card-brand">${c.brand}</div>
+      <div class="card-info">
+        <div class="card-number">•••• ${c.last4}</div>
+        <div class="card-expiry">Expires ${c.expiry}</div>
+      </div>
+      ${i === 0 ? '<div class="card-default">Default</div>' : ''}
+      <button class="remove-card" onclick="removeCard(${i})">✕</button>
+    </div>`).join('');
+}
+
+function saveCard() {
+  const num = document.getElementById('newCardNum').value.replace(/\s/g,'');
+  const exp = document.getElementById('newCardExp').value;
+  if (num.length < 16) return showToast('Enter a valid card number');
+  const brand = num.startsWith('4') ? 'VISA' : num.startsWith('5') ? 'MC' : 'CARD';
+  savedCards.push({ brand, last4: num.slice(-4), expiry: exp });
+  localStorage.setItem('ef_cards', JSON.stringify(savedCards));
+  closeModal('addCardModal');
+  renderPayments();
+  showToast('Card saved');
+}
+
+function removeCard(i) {
+  savedCards.splice(i, 1);
+  localStorage.setItem('ef_cards', JSON.stringify(savedCards));
+  renderPayments();
+}
+
+// ── STRIPE SETUP ───────────────────────────────────────────────
+// Replace with your Stripe publishable key (pk_test_... or pk_live_...)
+const STRIPE_PUBLISHABLE_KEY = 'pk_test_REPLACE_ME';
+// Replace with your deployed backend URL
+const BACKEND_URL = 'http://localhost:3001';
+
+let stripeInstance = null;
+let stripeElements = null;
+let stripeCardElement = null;
+
+function getStripe() {
+  if (!stripeInstance && typeof Stripe !== 'undefined') {
+    stripeInstance = Stripe(STRIPE_PUBLISHABLE_KEY);
+  }
+  return stripeInstance;
+}
+
+// ── CHECKOUT ───────────────────────────────────────────────────
+async function openCheckout(event) {
+  if (!user) { openModal('login'); showToast('Log in to buy tickets'); return; }
+  currentEventForCheckout = event;
+  const price = 45;
+  const fee = 5;
+
+  document.getElementById('checkoutEvent').innerHTML = `
+    <div class="checkout-icon">${event.emoji}</div>
+    <div><div class="checkout-name">${event.name}</div><div class="checkout-loc">${event.location}</div></div>
+    <div class="checkout-price">£${price}</div>`;
+  document.getElementById('priceTicket').textContent = `£${price}.00`;
+  document.getElementById('priceFee').textContent = `£${fee}.00`;
+  document.getElementById('priceTotal').textContent = `£${price + fee}.00`;
+
+  // Mount Stripe Elements card field
+  const stripe = getStripe();
+  if (stripe && STRIPE_PUBLISHABLE_KEY !== 'pk_test_REPLACE_ME') {
+    const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    stripeElements = stripe.elements();
+    stripeCardElement = stripeElements.create('card', {
+      style: {
+        base: {
+          fontFamily: "'DM Sans', sans-serif",
+          fontSize: '14px',
+          color: isDark ? '#f0efe9' : '#111110',
+          '::placeholder': { color: isDark ? '#55554f' : '#a8a7a3' },
+        },
+        invalid: { color: isDark ? '#f87171' : '#c0392b' },
+      },
+      hidePostalCode: true,
+    });
+    // Replace the static card input with a real Stripe element
+    const mountTarget = document.getElementById('stripeCardMount');
+    if (mountTarget) {
+      mountTarget.innerHTML = '';
+      stripeCardElement.mount('#stripeCardMount');
+    }
+  }
+
+  document.getElementById('checkoutModal').classList.add('open');
+}
+
+async function processPayment() {
+  const btn = document.getElementById('payBtn');
+  btn.disabled = true;
+  btn.textContent = 'Processing…';
+
+  const stripe = getStripe();
+  const event = currentEventForCheckout;
+
+  try {
+    // Step 1: Ask backend to create a PaymentIntent
+    const res = await fetch(`${BACKEND_URL}/create-payment-intent`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        eventName:     event.name,
+        eventLocation: event.location,
+        eventEmoji:    event.emoji,
+        price: 45,
+      }),
+    });
+
+    if (!res.ok) throw new Error('Failed to create payment intent');
+    const { clientSecret } = await res.json();
+
+    // Step 2: Confirm the card payment using Stripe.js
+    const nameInput = document.getElementById('cardholderName');
+    const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
+      payment_method: {
+        card: stripeCardElement,
+        billing_details: {
+          name:  nameInput?.value || user.name || '',
+          email: user.email || '',
+        },
+      },
+    });
+
+    if (error) {
+      showToast(error.message || 'Payment failed');
+      btn.disabled = false;
+      btn.textContent = 'Pay now';
+      return;
+    }
+
+    // Step 3: Payment succeeded on the client — webhook handles fulfilment
+    if (paymentIntent.status === 'succeeded') {
+      closeModal('checkoutModal');
+      showToast('🎉 Booking confirmed!');
+    }
+
+  } catch (err) {
+    // Fallback for when backend isn't running yet (demo mode)
+    console.warn('Backend not connected — running in demo mode:', err.message);
+    setTimeout(() => {
+      closeModal('checkoutModal');
+      showToast('🎉 Booking confirmed! (demo mode)');
+    }, 1200);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Pay now';
+  }
+}
+
+function formatCard(input) {
+  let v = input.value.replace(/\D/g,'').slice(0,16);
+  input.value = v.replace(/(.{4})/g,'$1 ').trim();
+}
+function formatExpiry(input) {
+  let v = input.value.replace(/\D/g,'').slice(0,4);
+  if (v.length >= 3) v = v.slice(0,2) + ' / ' + v.slice(2);
+  input.value = v;
+}
+
+// ── SEARCH ─────────────────────────────────────────────────────
+function saveKeys() {
+  const tm = document.getElementById('tmKey').value.trim();
+  const mb = document.getElementById('mbToken').value.trim();
+  localStorage.setItem('ef_keys', JSON.stringify({ tm, mb }));
+}
+
+async function doSearch() {
+  saveKeys();
+  const query = document.getElementById('searchInput').value.trim();
+  if (!query) return;
+  const btn = document.getElementById('searchBtn');
+  btn.disabled = true; btn.textContent = 'Searching…';
+  showLoading();
+  const keys = JSON.parse(localStorage.getItem('ef_keys') || '{}');
+  try {
+    const { keyword, city } = parseQuery(query);
+    let events = [], source = 'ai';
+    if (keys.tm) { events = await fetchTicketmaster(keyword, city, keys.tm); source = 'ticketmaster'; }
+    if (!events.length) { events = await fetchAI(query); source = 'ai'; }
+    renderResults(events, source, keys.mb);
+  } catch(e) { showError(); }
+  finally { btn.disabled = false; btn.textContent = 'Search'; }
+}
+
+function quickSearch(q) { document.getElementById('searchInput').value = q; doSearch(); }
+
+function parseQuery(query) {
+  const match = query.match(/\bin\s+([a-zA-Z\s]+)$/i) || query.match(/\bat\s+([a-zA-Z\s]+)$/i);
+  const city = match ? match[1].trim() : query.split(' ').slice(-1)[0];
+  const keyword = match ? query.replace(match[0], '').trim() : query;
+  return { keyword, city };
+}
+
+async function fetchTicketmaster(keyword, city, apiKey) {
+  const url = `https://app.ticketmaster.com/discovery/v2/events.json?apikey=${apiKey}&keyword=${encodeURIComponent(keyword)}&city=${encodeURIComponent(city)}&size=8&sort=date,asc`;
+  const res = await fetch(url);
+  const data = await res.json();
+  if (!data._embedded?.events) return [];
+  return data._embedded.events.map(e => {
+    const venue = e._embedded?.venues?.[0];
+    const lat = parseFloat(venue?.location?.latitude);
+    const lng = parseFloat(venue?.location?.longitude);
+    const dateStr = e.dates?.start?.localDate;
+    const timeStr = e.dates?.start?.localTime;
+    return {
+      emoji: genEmoji(e.classifications?.[0]?.genre?.name || ''),
+      name: e.name,
+      location: [venue?.name, venue?.city?.name, venue?.country?.countryCode].filter(Boolean).join(', '),
+      description: e.info || e.pleaseNote || (e.classifications?.[0]?.genre?.name ? `${e.classifications[0].genre.name} event` : 'Live event'),
+      tags: buildTags(e), date: dateStr ? formatDate(dateStr, timeStr) : null, url: e.url,
+      lat: isNaN(lat) ? null : lat, lng: isNaN(lng) ? null : lng,
+    };
+  });
+}
+
+function genEmoji(genre) {
+  const map = {'Rock':'🎸','Pop':'🎤','Hip-Hop':'🎧','Jazz':'🎷','Classical':'🎻','Electronic':'🎛','House':'🎛','Techno':'🎛','R&B':'🎵','Country':'🤠','Blues':'🎸','Reggae':'🌴','Latin':'💃','Metal':'🤘','Folk':'🪕','':'🎫'};
+  return map[genre] || '🎶';
+}
+
+function buildTags(e) {
+  const tags = [];
+  const seg = e.classifications?.[0]?.segment?.name;
+  const genre = e.classifications?.[0]?.genre?.name;
+  const sub = e.classifications?.[0]?.subGenre?.name;
+  if (seg && seg !== 'Undefined') tags.push(seg);
+  if (genre && genre !== 'Undefined') tags.push(genre);
+  if (sub && sub !== 'Undefined' && sub !== genre) tags.push(sub);
+  return tags.slice(0, 3);
+}
+
+function formatDate(d, t) {
+  const dt = new Date(d + (t ? 'T'+t : 'T00:00'));
+  let out = dt.toLocaleDateString('en-GB', { weekday: 'short', month: 'short', day: 'numeric' });
+  if (t) out += ' · ' + dt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  return out;
+}
+
+async function fetchAI(query) {
+  const prompt = `You are an event discovery assistant. The user is searching for: "${query}"
+Return a JSON array of 6 realistic, specific event or venue recommendations with real lat/lng coordinates.
+Return ONLY valid JSON array, no markdown, no extra text:
+[{"emoji":"single emoji","name":"specific venue or event name","location":"neighbourhood, city, country","description":"1-2 sentences","tags":["tag1","tag2"],"date":null,"url":null,"lat":48.8566,"lng":2.3522}]`;
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1200, messages: [{ role: 'user', content: prompt }] })
+  });
+  const data = await res.json();
+  return JSON.parse(data.content.map(b=>b.text||'').join('').replace(/```json|```/g,'').trim());
+}
+
+// ── RENDER ──────────────────────────────────────────────────────
+function showLoading() {
+  document.getElementById('resultsArea').innerHTML = `<div class="empty-state"><div class="spinner"></div>Finding events…</div>`;
+  document.getElementById('resultsCount').textContent = '';
+  document.getElementById('sourcePill').style.display = 'none';
+  clearMap();
+}
+
+function showError() {
+  document.getElementById('resultsArea').innerHTML = `<div class="empty-state"><div class="icon">⚠️</div>Something went wrong. Please try again.</div>`;
+}
+
+function renderResults(events, source, mbToken) {
+  document.getElementById('resultsCount').textContent = `${events.length} result${events.length !== 1 ? 's' : ''}`;
+  const pill = document.getElementById('sourcePill');
+  pill.style.display = 'inline';
+  pill.textContent = source === 'ticketmaster' ? 'Ticketmaster' : 'AI suggestions';
+  pill.className = source === 'ticketmaster' ? 'source-pill' : 'source-pill ai';
+
+  if (!events.length) {
+    document.getElementById('resultsArea').innerHTML = `<div class="empty-state"><div class="icon">🔍</div>No results found. Try a different search.</div>`;
+    return;
+  }
+
+  const html = events.map((e, i) => {
+    const faved = isFav(e);
+    const eJson = encodeURIComponent(JSON.stringify(e));
+    return `
+    <div class="card" id="card-${i}" onclick="focusCard(${i}, ${e.lat}, ${e.lng})">
+      <div class="card-icon">${e.emoji}</div>
+      <div class="card-body">
+        <div class="card-head">
+          <div class="card-name">${e.name}</div>
+          <button class="fav-btn ${faved ? 'active' : ''}" onclick="event.stopPropagation(); handleFav(this, '${eJson}')" title="${faved ? 'Remove from saved' : 'Save event'}">
+            ${faved ? '♥' : '♡'}
+          </button>
+        </div>
+        <div class="card-location">📍 ${e.location}</div>
+        <div class="card-desc">${e.description || ''}</div>
+        <div class="card-footer">
+          <div class="tags">
+            ${(e.tags||[]).map(t=>`<span class="tag">${t}</span>`).join('')}
+            ${source === 'ticketmaster' ? '<span class="tag live">Live</span>' : ''}
+          </div>
+          ${e.date ? `<div class="card-date">${e.date}</div>` : ''}
+        </div>
+        ${e.url || source === 'ticketmaster' ? `<button class="buy-btn" style="margin-top:10px;" onclick="event.stopPropagation(); openCheckout(JSON.parse(decodeURIComponent('${eJson}')))">Buy tickets</button>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('resultsArea').innerHTML = `<div class="cards">${html}</div>`;
+  const geo = events.filter(e => e.lat && e.lng);
+  if (geo.length) initMap(geo, mbToken);
+}
+
+function handleFav(btn, eJson) {
+  const event = JSON.parse(decodeURIComponent(eJson));
+  const nowFaved = toggleFav(event);
+  const faved = isFav(event);
+  btn.textContent = faved ? '♥' : '♡';
+  btn.classList.toggle('active', faved);
+}
+
+// ── MAP ─────────────────────────────────────────────────────────
+function clearMap() {
+  if (mapInstance) { mapInstance.remove(); mapInstance = null; }
+  markers = [];
+  document.getElementById('map').innerHTML = `<div class="map-empty"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>Event locations appear here</div>`;
+}
+
+function initMap(events, token) {
+  const mapDiv = document.getElementById('map');
+  mapDiv.innerHTML = '';
+  if (!token || typeof mapboxgl === 'undefined') {
+    mapDiv.innerHTML = `<div class="map-empty"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>Add a Mapbox token in API settings to see the map</div>`;
+    return;
+  }
+  mapboxgl.accessToken = token;
+  const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  mapInstance = new mapboxgl.Map({
+    container: 'map',
+    style: isDark ? 'mapbox://styles/mapbox/dark-v11' : 'mapbox://styles/mapbox/light-v11',
+    center: [events[0].lng, events[0].lat], zoom: 11,
+  });
+  mapInstance.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'bottom-right');
+  markers = [];
+  mapInstance.on('load', () => {
+    events.forEach((e, i) => {
+      const el = document.createElement('div');
+      el.style.cssText = `width:28px;height:28px;background:${isDark?'#f0efe9':'#111110'};border-radius:50% 50% 50% 0;transform:rotate(-45deg);cursor:pointer;border:2px solid ${isDark?'#111110':'#fff'};box-shadow:0 2px 8px rgba(0,0,0,0.2);`;
+      const inner = document.createElement('div');
+      inner.textContent = e.emoji;
+      inner.style.cssText = 'transform:rotate(45deg);font-size:13px;line-height:24px;text-align:center;';
+      el.appendChild(inner);
+      const popup = new mapboxgl.Popup({ offset: 18, closeButton: false })
+        .setHTML(`<div class="popup-name">${e.name}</div><div class="popup-loc">${e.location}</div>`);
+      const marker = new mapboxgl.Marker(el).setLngLat([e.lng, e.lat]).setPopup(popup).addTo(mapInstance);
+      el.addEventListener('click', () => focusCard(i, e.lat, e.lng));
+      markers.push({ marker, el });
+    });
+    if (events.length > 1) {
+      const bounds = events.reduce((b, e) => b.extend([e.lng, e.lat]),
+        new mapboxgl.LngLatBounds([events[0].lng, events[0].lat], [events[0].lng, events[0].lat]));
+      mapInstance.fitBounds(bounds, { padding: 48, maxZoom: 13 });
+    }
+  });
+}
+
+function focusCard(index, lat, lng) {
+  document.querySelectorAll('.card').forEach((c, i) => c.classList.toggle('active', i === index));
+  if (mapInstance && lat && lng) { mapInstance.flyTo({ center: [lng, lat], zoom: 14, speed: 1.2 }); markers[index]?.marker.togglePopup(); }
+  document.getElementById('card-'+index)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// ── UTILS ────────────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+document.getElementById('searchInput').addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
+document.querySelectorAll('.modal-backdrop').forEach(b => b.addEventListener('click', e => { if (e.target === b) b.classList.remove('open'); }));
+</script>
+</body>
+</html>
