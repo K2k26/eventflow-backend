@@ -6,7 +6,7 @@
 <title>Eventflow</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
 <link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet" />
 <script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
 <script src="https://js.stripe.com/v3/"></script>
@@ -58,7 +58,7 @@
   body {
     background: var(--bg);
     color: var(--text);
-    font-family: 'Inter', sans-serif;
+    font-family: 'DM Sans', sans-serif;
     font-size: 15px;
     line-height: 1.6;
     min-height: 100vh;
@@ -78,18 +78,18 @@
   }
 
   .nav-logo {
-    font-family: 'Inter', sans-serif;
+    font-family: 'Instrument Serif', serif;
     font-size: 20px;
     color: var(--text);
     text-decoration: none;
     letter-spacing: -0.01em;
   }
-  .nav-logo em { font-style: italic; }
+  .nav-logo em { font-style: normal; }
 
   .nav-right { display: flex; align-items: center; gap: 8px; }
 
   .nav-btn {
-    font-family: 'Inter', sans-serif;
+    font-family: 'DM Sans', sans-serif;
     font-size: 13px;
     font-weight: 500;
     padding: 7px 16px;
@@ -135,7 +135,7 @@
   .hero-eyebrow::before { content: ''; width: 6px; height: 6px; background: var(--success); border-radius: 50%; }
 
   .hero h1 {
-    font-family: 'Inter', sans-serif;
+    font-family: 'Instrument Serif', serif;
     font-size: clamp(36px, 6vw, 60px);
     font-weight: 400;
     line-height: 1.1;
@@ -143,7 +143,7 @@
     color: var(--text);
     margin-bottom: 16px;
   }
-  .hero h1 em { font-style: italic; color: var(--text2); }
+  .hero h1 em { font-style: normal; color: var(--text); }
 
   .hero p {
     font-size: 16px;
@@ -175,7 +175,7 @@
     flex: 1;
     background: transparent;
     border: none;
-    font-family: 'Inter', sans-serif;
+    font-family: 'DM Sans', sans-serif;
     font-size: 15px;
     color: var(--text);
     padding: 14px 16px;
@@ -190,7 +190,7 @@
     color: var(--bg);
     border: none;
     border-radius: 10px;
-    font-family: 'Inter', sans-serif;
+    font-family: 'DM Sans', sans-serif;
     font-size: 13px;
     font-weight: 500;
     padding: 8px 20px;
@@ -398,7 +398,7 @@
   .modal-close:hover { background: var(--bg3); }
 
   .modal h2 {
-    font-family: 'Inter', sans-serif;
+    font-family: 'Instrument Serif', serif;
     font-size: 22px; font-weight: 400;
     letter-spacing: -0.01em;
     color: var(--text);
@@ -431,7 +431,7 @@
     border: 1px solid var(--border);
     border-radius: var(--radius);
     color: var(--text);
-    font-family: 'Inter', sans-serif;
+    font-family: 'DM Sans', sans-serif;
     font-size: 14px;
     padding: 10px 12px;
     outline: none;
@@ -443,7 +443,7 @@
     width: 100%; padding: 11px;
     background: var(--text); color: var(--bg);
     border: none; border-radius: var(--radius);
-    font-family: 'Inter', sans-serif;
+    font-family: 'DM Sans', sans-serif;
     font-size: 14px; font-weight: 500;
     cursor: pointer; transition: opacity 0.15s;
     margin-top: 4px;
@@ -461,7 +461,7 @@
     width: 100%; padding: 10px;
     background: var(--bg2); color: var(--text);
     border: 1px solid var(--border2); border-radius: var(--radius);
-    font-family: 'Inter', sans-serif;
+    font-family: 'DM Sans', sans-serif;
     font-size: 13px; font-weight: 500;
     cursor: pointer; transition: background 0.15s;
     display: flex; align-items: center; justify-content: center; gap: 8px;
@@ -539,7 +539,7 @@
     margin-bottom: 12px;
   }
   .section-title {
-    font-family: 'Inter', sans-serif;
+    font-family: 'Instrument Serif', serif;
     font-size: 18px; color: var(--text); font-weight: 400;
   }
   .fav-list { display: flex; flex-direction: column; gap: 8px; }
@@ -591,7 +591,7 @@
   .mapboxgl-popup-content {
     background: var(--bg) !important; color: var(--text) !important;
     border: 1px solid var(--border2) !important; border-radius: 8px !important;
-    padding: 10px 14px !important; font-family: 'Inter', sans-serif !important;
+    padding: 10px 14px !important; font-family: 'DM Sans', sans-serif !important;
     font-size: 13px !important; box-shadow: var(--shadow-lg) !important;
   }
   .mapboxgl-popup-tip { display: none !important; }
@@ -1052,7 +1052,7 @@ async function openCheckout(event) {
     stripeCardElement = stripeElements.create('card', {
       style: {
         base: {
-          fontFamily: "'Inter', sans-serif",
+          fontFamily: "'DM Sans', sans-serif",
           fontSize: '14px',
           color: isDark ? '#f0efe9' : '#111110',
           '::placeholder': { color: isDark ? '#55554f' : '#a8a7a3' },
